@@ -55,3 +55,37 @@ class Database:
                 balance = how_match - 150
                 return self.cursor.execute("UPDATE `users` SET `balance` = ? WHERE `user_id` = ?", (balance, user_id,))
 
+    def get_name_park(self, callback):
+        with self.connection:
+            result = self.cursor.execute("SELECT `name` FROM `lipetsk` WHERE `callback` = ?", (callback,)).fetchall()
+            for row in result:
+                name_park = str(row[0])
+            return name_park
+
+    def get_lat(self, callback):
+        with self.connection:
+            result = self.cursor.execute("SELECT `lat` FROM `lipetsk` WHERE `callback` = ?", (callback,)).fetchall()
+            for row in result:
+                lat = str(row[0])
+            return float(lat)
+
+    def get_lon(self, callback):
+        with self.connection:
+            result = self.cursor.execute("SELECT `lon` FROM `lipetsk` WHERE `callback` = ?", (callback,)).fetchall()
+            for row in result:
+                lon = str(row[0])
+            return float(lon)
+
+    def get_mest(self, callback):
+        with self.connection:
+            result = self.cursor.execute("SELECT `mest` FROM `lipetsk` WHERE `callback` = ?", (callback,)).fetchall()
+            for row in result:
+                mest = str(row[0])
+            return mest
+
+    def get_sv_mest(self, callback):
+        with self.connection:
+            result = self.cursor.execute("SELECT `sv_mest` FROM `lipetsk` WHERE `callback` = ?", (callback,)).fetchall()
+            for row in result:
+                mest = str(row[0])
+            return mest
