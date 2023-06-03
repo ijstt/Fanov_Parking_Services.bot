@@ -1,4 +1,7 @@
 from aiogram import Bot, Dispatcher, types, executor
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
 from db import Database
 from io import BytesIO
 from datetime import date
@@ -8,11 +11,16 @@ import keyboard as kb
 import qrcode
 
 logging.basicConfig(level=logging.INFO)
+storage = MemoryStorage()
 
 bot = Bot(token=config.TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=storage)
 
 db = Database('park_db.db')
+
+
+class AllStates(StatesGroup):
+    waiting_for_support = State()
 
 
 def make_qrcode(text):
@@ -82,14 +90,27 @@ async def lp(callback_query: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda x: x.data == 'book')
-async def lp1_book(callback_query: types.CallbackQuery):
-    if db.book_parking(callback_query.from_user.id) == "Мало денег":
-        await bot.send_message(callback_query.from_user.id, text="У вас недостаточно денег")
+async def waiting_for_support(callback_query: types.CallbackQuery):
+    await AllStates.waiting_for_support.set()
+    await bot.send_message(callback_query.from_user.id, text="Укажите номер  автомобиля, пример - о001оо777")
+
+
+@dp.message_handler(state=AllStates.waiting_for_support)
+async def process_support(message: types.Message, state: FSMContext):
+    mes = message.text
+    if mes[0].isalpha() and mes[1:4].isalnum() and mes[4:6].isalpha() and mes[6:].isalnum():
+        if db.book_parking(message.from_user.id) == "Мало денег":
+            await bot.send_message(message.from_user.id, text="У вас недостаточно денег")
+        else:
+            db.set_car_number(message.from_user.id, mes)
+            await bot.send_photo(message.from_user.id,
+                                 photo=make_qrcode(f"{mes}{message.from_user.id}"),
+                                 has_spoiler=True)
+            await bot.send_message(message.from_user.id, text="Предъявите QR код при въезде")
+            await state.finish()
     else:
-        await bot.send_photo(callback_query.from_user.id,
-                             photo=make_qrcode("о001оо5098536995"),
-                             has_spoiler=True)
-        await bot.send_message(callback_query.from_user.id, text="Предъявите QR код при въезде")
+        await message.answer("Вы указали неправильный номер машины, отправьте ещё раз, пример - о001оо777")
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
