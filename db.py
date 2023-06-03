@@ -89,3 +89,8 @@ class Database:
             for row in result:
                 mest = str(row[0])
             return mest
+
+    def set_car_number(self, user_id, car_number):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `car_number` = ? WHERE `user_id` = ?",
+                                       (car_number, user_id,))
