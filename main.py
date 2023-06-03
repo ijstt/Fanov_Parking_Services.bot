@@ -90,13 +90,13 @@ async def lp(callback_query: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda x: x.data == 'book')
-async def waiting_for_support(callback_query: types.CallbackQuery):
+async def booking_car(callback_query: types.CallbackQuery):
     await AllStates.waiting_for_support.set()
     await bot.send_message(callback_query.from_user.id, text="Укажите номер  автомобиля, пример - о001оо777")
 
 
 @dp.message_handler(state=AllStates.waiting_for_support)
-async def process_support(message: types.Message, state: FSMContext):
+async def check_booking(message: types.Message, state: FSMContext):
     mes = message.text
     if mes[0].isalpha() and mes[1:4].isalnum() and mes[4:6].isalpha() and mes[6:].isalnum():
         if db.book_parking(message.from_user.id) == "Мало денег":
