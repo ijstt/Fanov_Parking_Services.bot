@@ -1,14 +1,16 @@
+import logging
+from datetime import date, datetime
+from io import BytesIO
+
+import qrcode
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from db import Database
-from io import BytesIO
-from datetime import date
-import logging
+from aiogram.dispatcher.filters.state import State, StatesGroup
+
 import config
 import keyboard as kb
-import qrcode
+from db import Database
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
@@ -20,7 +22,17 @@ db = Database('park_db.db')
 
 
 class AllStates(StatesGroup):
-    waiting_for_support = State()
+    booking = State()
+
+
+def normal_time(time):
+    res = ''
+    for i in time:
+        if i != '.':
+            res += i
+        else:
+            break
+    return res
 
 
 def make_qrcode(text):
@@ -42,7 +54,7 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(commands=['help'])
-async def help(message: types.Message):
+async def help_info(message: types.Message):
     await message.answer("Данный бот является частью системы Fanov Parking Services\n"
                          "Для аренды места - Парковки🚗>>>Город>>>Место\n"
                          "Наш сайт - https://jienivets.github.io/FanovParkingServices/pages/parcing.html\n"
@@ -81,32 +93,47 @@ async def lipetsk(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(lambda x: x.data[:2] == 'lp')
 async def lp(callback_query: types.CallbackQuery):
     callback = callback_query.data
+    user_id = callback_query.from_user.id
     await bot.delete_message(callback_query.from_user.id, callback_query.message.message_id)
-    await bot.send_message(callback_query.from_user.id, text=db.get_name_park(callback))
-    await bot.send_location(callback_query.from_user.id, db.get_lat(callback), db.get_lon(callback))
-    await bot.send_message(callback_query.from_user.id,
-                           text=f"Всего мест - {db.get_mest(callback)}\nСвободных мест - {db.get_sv_mest(callback)}",
-                           reply_markup=kb.book)
+    if db.get_flag_book(callback_query.from_user.id):
+        await bot.send_message(callback_query.from_user.id, text=f"Вы уже аренжоавли место в городе - "
+                                                                 f"{db.get_name_sity(user_id)}\n"
+                                                                 f"На парковке - {db.get_park(user_id)}\n"
+                                                                 f"Время - {db.get_date_booking(user_id)}")
+    else:
+        await bot.send_message(callback_query.from_user.id, text=db.get_name_park(callback))
+        await bot.send_location(callback_query.from_user.id, db.get_lat(callback), db.get_lon(callback))
+        await bot.send_message(callback_query.from_user.id,
+                               text=f"Всего мест - {db.get_mest(callback)}\n"
+                                    f"Свободных мест - {db.get_sv_mest(callback)}", reply_markup=kb.book)
+        db.set_last_callback(callback_query.from_user.id, callback)
+        db.set_last_city(user_id, 'lipetsk')
 
 
 @dp.callback_query_handler(lambda x: x.data == 'book')
-async def booking_car(callback_query: types.CallbackQuery):
-    await AllStates.waiting_for_support.set()
+async def booking_park(callback_query: types.CallbackQuery):
+    await AllStates.booking.set()
     await bot.send_message(callback_query.from_user.id, text="Укажите номер  автомобиля, пример - о001оо777")
 
 
-@dp.message_handler(state=AllStates.waiting_for_support)
+@dp.message_handler(state=AllStates.booking)
 async def check_booking(message: types.Message, state: FSMContext):
     mes = message.text
     if mes[0].isalpha() and mes[1:4].isalnum() and mes[4:6].isalpha() and mes[6:].isalnum():
         if db.book_parking(message.from_user.id) == "Мало денег":
             await bot.send_message(message.from_user.id, text="У вас недостаточно денег")
+            await state.finish()
         else:
             db.set_car_number(message.from_user.id, mes)
+            db.set_date_booking(message.from_user.id, normal_time(str(datetime.now())))
+            db.set_name_city(message.from_user.id, str(db.get_last_city(message.from_user.id)))
+            db.set_name_parking(message.from_user.id, db.get_name_park(db.get_last_callback(message.from_user.id)))
+            db.set_sv_mest(db.get_last_callback(message.from_user.id), 0)
             await bot.send_photo(message.from_user.id,
                                  photo=make_qrcode(f"{mes}{message.from_user.id}"),
                                  has_spoiler=True)
             await bot.send_message(message.from_user.id, text="Предъявите QR код при въезде")
+            db.set_flag_book(message.from_user.id, 1)
             await state.finish()
     else:
         await message.answer("Вы указали неправильный номер машины, отправьте ещё раз, пример - о001оо777")
