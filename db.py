@@ -94,3 +94,90 @@ class Database:
         with self.connection:
             return self.cursor.execute("UPDATE `users` SET `car_number` = ? WHERE `user_id` = ?",
                                        (car_number, user_id,))
+
+    def set_date_booking(self, user_id, time):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `date_booking` = ? WHERE `user_id` = ?",
+                                       (time, user_id,))
+
+    def set_sv_mest(self, callback, mode=2):
+        with self.connection:
+            sv = self.get_sv_mest(callback)
+            if mode == 0:
+                sv = int(self.get_sv_mest(callback)) - 1
+            elif mode == 1:
+                sv = int(self.get_sv_mest(callback)) + 1
+            return self.cursor.execute("UPDATE `lipetsk` SET `sv_mest` = ? WHERE `callback` = ?",
+                                       (sv, callback,))
+
+    def set_name_city(self, user_id, city):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `name_city` = ? WHERE `user_id` = ?", (city, user_id,))
+
+    def set_name_parking(self, user_id, name):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `name_parking` = ? WHERE `user_id` = ?",
+                                       (name, user_id,))
+
+    def get_park(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `name_parking` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                park = str(row[0])
+            return park
+
+    def get_date_booking(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `date_booking` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                date_booking = str(row[0])
+            return date_booking
+
+    def set_last_callback(self, user_id, callback):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `last_callback` = ? WHERE `user_id` = ?",
+                                       (callback, user_id,))
+
+    def get_last_callback(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `last_callback` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                callb = str(row[0])
+            return callb
+
+    def get_name_sity(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `name_city` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                city = str(row[0])
+            return city
+
+    def set_flag_book(self, user_id, flag):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `flag_book` = ? WHERE `user_id` = ?",
+                                       (flag, user_id,))
+
+    def get_flag_book(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `flag_book` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                flag = int(row[0])
+            return bool(flag)
+
+    def set_last_city(self, user_id, city: str):
+        with self.connection:
+            return self.cursor.execute("UPDATE `users` SET `last_city` = ? WHERE `user_id` = ?",
+                                       (city, user_id,))
+
+    def get_last_city(self, user_id):
+        with self.connection:
+            result = self.cursor.execute("SELECT `last_city` FROM `users` WHERE `user_id` = ?",
+                                         (user_id,)).fetchall()
+            for row in result:
+                last_city = str(row[0])
+            return last_city
