@@ -124,17 +124,21 @@ async def check_booking(message: types.Message, state: FSMContext):
             await bot.send_message(message.from_user.id, text="У вас недостаточно денег")
             await state.finish()
         else:
-            db.set_car_number(message.from_user.id, mes)
-            db.set_date_booking(message.from_user.id, normal_time(str(datetime.now())))
-            db.set_name_city(message.from_user.id, str(db.get_last_city(message.from_user.id)))
-            db.set_name_parking(message.from_user.id, db.get_name_park(db.get_last_callback(message.from_user.id)))
-            db.set_sv_mest(db.get_last_callback(message.from_user.id), 0)
-            await bot.send_photo(message.from_user.id,
-                                 photo=make_qrcode(f"{mes}{message.from_user.id}"),
-                                 has_spoiler=True)
-            await bot.send_message(message.from_user.id, text="Предъявите QR код при въезде")
-            db.set_flag_book(message.from_user.id, 1)
-            await state.finish()
+            if db.get_flag_book(message.from_user.id):
+                await bot.send_message(message.from_user.id,
+                                       f"Вы уже арендовали место на парковке - {db.get_park(message.from_user.id)}")
+            else:
+                db.set_car_number(message.from_user.id, mes)
+                db.set_date_booking(message.from_user.id, normal_time(str(datetime.now())))
+                db.set_name_city(message.from_user.id, str(db.get_last_city(message.from_user.id)))
+                db.set_name_parking(message.from_user.id, db.get_name_park(db.get_last_callback(message.from_user.id)))
+                db.set_sv_mest(db.get_last_callback(message.from_user.id), 0)
+                await bot.send_photo(message.from_user.id,
+                                     photo=make_qrcode(f"{mes}{message.from_user.id}"),
+                                     has_spoiler=True)
+                await bot.send_message(message.from_user.id, text="Предъявите QR код при въезде")
+                db.set_flag_book(message.from_user.id, 1)
+                await state.finish()
     else:
         await message.answer("Вы указали неправильный номер машины, отправьте ещё раз, пример - о001оо777")
 
