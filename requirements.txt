@@ -13,7 +13,12 @@ idna==3.4
 magic-filter==1.0.9
 multidict==6.0.4
 Pillow==9.5.0
+pymorphy2==0.9.1
+pymorphy2-dicts-ru==2.4.417127.4579844
 pypng==0.20220715.0
+PyQt5==5.15.9
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.12.2
 pytz==2023.3
 qrcode==7.4.2
 requests==2.30.0
