@@ -159,7 +159,7 @@ class Database:
     def set_flag_book(self, user_id, flag):
         with self.connection:
             return self.cursor.execute("UPDATE `users` SET `flag_book` = ? WHERE `user_id` = ?",
-                                       (flag, user_id,))
+                                       (str(flag), user_id,))
 
     def get_flag_book(self, user_id):
         with self.connection:
